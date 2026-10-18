@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/HiddenAchievement.png</file>
+        <file>images/IconManager.png</file>
+        <file>images/cancel.png</file>
+        <file>images/save.png</file>
+        <file>images/add.png</file>
+        <file>images/continue.png</file>
+        <file>images/open.png</file>
+        <file>images/extract.png</file>
+        <file>images/convert.png</file>
+        <file>images/clean.png</file>
+        <file>images/default image.png</file>
+        <file>images/about.png</file>
+        <file>images/free60.png</file>
+        <file>images/github.fixed.png</file>
+        <file>images/xboxmb.png</file>
+        <file>images/close.png</file>
+    </qresource>
+</RCC>

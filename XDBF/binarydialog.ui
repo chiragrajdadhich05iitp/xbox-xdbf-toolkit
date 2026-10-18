@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BinaryDialog</class>
+ <widget class="QDialog" name="BinaryDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>535</width>
+    <height>278</height>
+   </rect>
+  </property>
+  <property name="font">
+   <font>
+    <family>Arial</family>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>Binary Setting Entry</string>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QTableWidget" name="tableWidget">
+     <property name="font">
+      <font>
+       <family>Courier New</family>
+      </font>
+     </property>
+     <property name="lineWidth">
+      <number>1</number>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="gridStyle">
+      <enum>Qt::SolidLine</enum>
+     </property>
+     <property name="cornerButtonEnabled">
+      <bool>false</bool>
+     </property>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>30</number>
+     </attribute>
+     <attribute name="horizontalHeaderMinimumSectionSize">
+      <number>30</number>
+     </attribute>
+     <attribute name="verticalHeaderDefaultSectionSize">
+      <number>23</number>
+     </attribute>
+     <attribute name="verticalHeaderMinimumSectionSize">
+      <number>23</number>
+     </attribute>
+     <column>
+      <property name="text">
+       <string>00</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>01</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>02</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>03</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>04</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>05</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>06</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>07</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>08</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>09</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>0A</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>0B</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>0C</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>0D</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>0E</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>0F</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton">
+       <property name="text">
+        <string>Extract Data Only</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
