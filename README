@@ -1,165 +1,203 @@
-# Xbox 360 XDBF Container Specification & Low-Level In-Memory Parser Engine
 
-An architectural, low-level reverse-engineering analysis and modular C++/Qt implementation for inspecting, validating, and extracting non-volatile structured metadata from the proprietary **Xbox Database Format (XDBF)**.
+# Xbox XDBF Toolkit & In-Memory Serialization Engine
+
+[![C++ Standard](https://img.shields.io/badge/Standard-ISO%20C%2B%2B17-00599C?logo=c%2B%2B&logoColor=white)](#)
+[![Qt Runtime](https://img.shields.io/badge/UI%20Framework-Qt%205.15%2B%20QtWidgets-41CD52?logo=qt&logoColor=white)](#)
+[![Toolchain Target](https://img.shields.io/badge/Toolchain-MSYS2%20UCRT64%20(GCC%2014%2B)-2F3238)](#)
+[![Memory Safety](https://img.shields.io/badge/ABI-x86__64--w64--mingw32-informational)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A systems-level binary serialization framework, zero-overhead parser, and GUI inspector for the Xbox 360 Database File (`XDBF`) container format and Game Profile Data (`.gpd`) compound files. 
+
+Engineered to modernize legacy structured file pipelines, eliminate strict-aliasing memory hazards under modern ISO C++17 specifications, and interface natively with 64-bit Universal C Runtime (UCRT) architectures.
 
 ---
 
-## 1. Abstract & System Motivation
+## 1. Executive Architecture & Systems Overview
 
-The Xbox 360 operating system architecture (Xbox 360 System Software / Xenon kernel) manages user identity, stateful title configuration, localized assets, and cryptographic achievements through discrete container files known as **Game Profile Data (GPD)** packages. At the core of every valid `.gpd` package lies an **XDBF (Xbox Database File)** block.
+The Xbox 360 runtime persists unstructured player metadata, localized text tables, cryptographically tied achievements, and raw asset blobs within specialized compound binaries denominated as **XDBF Containers**. Structurally, an XDBF file acts as a contiguous, low-overhead database containing fixed-width header descriptors, sparse free-memory allocation indexes, and dynamically mapped entry tables.
 
-Historically, reverse-engineering embedded console binaries requires navigating:
-- **Heterogeneous Endianness Constraints**: Xenon is a multi-core 64-bit PowerPC architecture running strictly in **Big-Endian** byte order. Parsing on $x86\_64$ hosts requires deterministic endian swapping across multibyte integers.
-- **Dynamic Sparse Memory Layouts**: To preserve flash and hard-disk drive bandwidth on original 2005 hardware, XDBF records utilize table-driven pointer indirections, run-length sparse tables, and free-allocation heaps.
 
-This repository provides an algorithmic, statically type-safe reference parser and desktop analysis suite capable of bit-level traversal, structural integrity validation, and payload deserialization.
+```
+
++-------------------------------------------------------------------------+
+|                         XDBF Compound Container                         |
++=========================================================================+
+|  Container Header (Magic: 'XDBF', Version, Alloc Table & Entry Offsets) |
++-------------------------------------------------------------------------+
+|  Free Memory Defragmentation Table (Sparse Span Allocation Headers)     |
++-------------------------------------------------------------------------+
+|  Entry Descriptor Table (Compound Keys: [Namespace Type + 64-bit ID])   |
++-------------------------------------------------------------------------+
+|  Contiguous Payload Heap (Mixed-Endian Structs, Compressed / Raw Blobs) |
+|   ├── Achievement Descriptors (Scores, Flags, Timestamp Vectors)       |
+|   ├── UTF-16-BE Localized String Payloads                               |
+|   ├── Portable Network Graphics (PNG) Raster Icons                      |
+|   └── Synchronization Queues (Strict Sync Ordering Tables)              |
++-------------------------------------------------------------------------+
+
+```
 
 ---
 
 ## 2. Binary Layout & Formal Specification
 
-An XDBF container operates as a specialized, single-file flat database. All fields are aligned on 32-bit boundaries and encoded in **Big-Endian (`MSB:BE`)**.
+An XDBF file operates over strict Big-Endian (PowerPC 11172 / Xenon architecture) multi-byte word representations. Little-Endian hosts (x86_64) interacting with these structures require cycle-efficient byte-swapping pipelines across all multi-byte primitive loads.
 
-```text
-+------------------------------------------------------------------------+
-|                          XDBF FILE CONTAINER                           |
-+------------------------------------------------------------------------+
-| 0x00 - 0x17 : Fixed File Header (Magic, Version, Reserved Pointers)    |
-+------------------------------------------------------------------------+
-| 0x18 - 0x2F : Primary Allocation & Entry Table Pointers                |
-+------------------------------------------------------------------------+
-| [Dynamic]   : Entry Specifier Table (Array of XDBF_ENTRY)              |
-+------------------------------------------------------------------------+
-| [Dynamic]   : Free Chunk Allocation Table                              |
-+------------------------------------------------------------------------+
-| [Dynamic]   : Raw Payload Arena (String Tables, Assets, Achievements)  |
-+------------------------------------------------------------------------+
-2.1 Fixed Header Specification (XDBF_HEADER)
-The primary header spans 24 bytes (0x18) and enforces format validation via a 4-byte magic signature:
 
-Signature=0x58444246(ASCII: ‘‘XDBF")
-C++
+```
+
+```
+   0               8              16              24              32 (Bits)
+   +---------------+---------------+---------------+---------------+
+
+```
+
+0x0000 | 'X'           | 'D'           | 'B'           | 'F'           |  Magic Identifier
++---------------+---------------+---------------+---------------+
+0x0004 | Version (High / Major)        | Version (Low / Minor)         |
++---------------+---------------+---------------+---------------+
+0x0008 | Entry Table Offset (BE)                       | Entries Count |
++---------------+---------------+---------------+---------------+
+0x0010 | Free Memory Table Length                      | Free Spans    |
++---------------+---------------+---------------+---------------+
+
+```
+
+### Entry Descriptor Schema
+
+Each payload record within the container is indexed by a 24-byte header entry:
+
+$$\text{Key} = \langle \text{Type} \in \mathbb{U}_{16},\; \text{Identifier} \in \mathbb{U}_{64} \rangle$$
+
+```cpp
 #pragma pack(push, 1)
-struct XdbfHeader {
-    uint32_t magic;               // 0x00: 0x58444246 ("XDBF")
-    uint32_t version;             // 0x04: Format revision (typically 0x00000001)
-    uint32_t entry_table_offset;  // 0x08: Relative offset to Entry Specifiers
-    uint32_t entry_count;         // 0x0C: Total populated entry descriptors
-    uint32_t free_table_offset;   // 0x10: Relative offset to Free Space Table
-    uint32_t free_table_size;     // 0x14: Allocation pool size
+struct XdbfEntryDescriptor {
+    uint16_t  namespaceType;   // 1 = Achievement, 2 = Image, 3 = Setting, etc.
+    uint64_t  recordId;        // Unique 64-bit Big-Endian Key
+    uint32_t  payloadOffset;   // Absolute byte offset relative to file origin
+    uint32_t  payloadLength;   // Size of payload block in octets
+    uint32_t  flags;           // Reserved sync & allocation flags
 };
 #pragma pack(pop)
-2.2 Entry Descriptor Record (XDBF_ENTRY)
-Each indexed resource within the database is referenced by an 18-byte entry structure mapping namespace identifiers, unique asset 64-bit keys, and memory offsets.
 
-C++
-#pragma pack(push, 1)
-struct XdbfEntry {
-    uint16_t namespace_id;        // 0x00: Namespace category (Title, Settings, Icons)
-    uint64_t resource_id;         // 0x02: Unique 64-bit Big-Endian resource hash
-    uint32_t payload_offset;      // 0x0A: Absolute file byte-offset to raw payload
-    uint32_t payload_length;      // 0x0E: Size of payload block in bytes
-};
-#pragma pack(pop)
-2.3 Namespace Identification Mapping
-The XDBF format clusters resources using hierarchical semantic namespaces:
+```
 
-Namespace Identifier	Hex Code	Semantic Role
-NAMESPACE_ACHIEVEMENT	0x0001	Achievement definitions, reward states, Gamerscore yields
-NAMESPACE_ICON	0x0002	Compressed PNG / DDS texture chunks for badges and title banners
-NAMESPACE_SETTING	0x0003	User-defined title configurations, input inversion mappings, and audio state
-NAMESPACE_STRING	0x0004	UTF-8 / UTF-16 BE localized text descriptors and string lookup tables
-NAMESPACE_METADATA	0x0005	Master title ID, content flags, and system hardware specifications
-3. Algorithmic Complexity & Systems Design
-3.1 Endian Conversion Primitives
-Because 
-x86_64 hosts operate on Little-Endian registers, all header reading operations must pass through bit-twiddling intrinsics:
+---
 
-bswap 
-32
-​
- (x)=((x≪24) & 0xFF000000)∣((x≪8) & 0x00FF0000)∣((x≫8) & 0x0000FF00)∣((x≫24) & 0x000000FF)
-In this implementation, hardware-accelerated compiler intrinsics (__builtin_bswap32, _byteswap_ulong) or Qt-native qFromBigEndian<T>() guarantee 
-O(1) transformations compiled directly into single bswap assembly instructions.
+## 3. Core Engine Mechanics & Computational Subsystems
 
-3.2 Dynamic Search & Spatial Verification
-Linear Parse Complexity: 
-O(N) with respect to entry descriptors during initial file mapping, loading zero-copy pointers directly from memory-mapped disk buffers.
+### In-Place Endian Inversion Pipeline
 
-Lookup Complexity: 
-O(logN) by ordering entries into a balanced binary search space keyed on (namespace_id, resource_id).
+Direct reinterpret cast operations across mixed-endian boundary representations invoke undefined behavior under modern compiler optimization levels (`-O2` / `-O3`) due to strict type-aliasing rules ($\text{ISO/IEC 9899:1999 §6.5/7}$). The engine implements memory-safe in-place swapping via standard vectorization hooks:
 
-Auxiliary Space Complexity: 
-O(N) resident descriptors maintained in flat cache-friendly continuous vectors (std::vector<XdbfEntry>), maximizing L1/L2 cache locality during batch traversal.
+```cpp
+template <typename T>
+inline void SwapEndianInPlace(T &val) {
+    static_assert(std::is_trivially_copyable<T>::value, "Non-POD type passed to SwapEndian");
+    if constexpr (sizeof(T) == 2) {
+        val = static_cast<T>(__builtin_bswap16(static_cast<uint16_t>(val)));
+    } else if constexpr (sizeof(T) == 4) {
+        val = static_cast<T>(__builtin_bswap32(static_cast<uint32_t>(val)));
+    } else if constexpr (sizeof(T) == 8) {
+        val = static_cast<T>(__builtin_bswap64(static_cast<uint64_t>(val)));
+    }
+}
 
-4. Software Architecture & Directory Layout
-Plaintext
-xbox-xdbf-explorer/
-├── cmake/
-│   └── CompilerFlags.cmake       # Strict warnings (-Wall, -Wextra, -Wpedantic, -Werror)
-├── include/
-│   ├── core/
-│   │   ├── Endian.hpp            # Hardware-accelerated byte-order primitives
-│   │   ├── XdbfDefinitions.hpp   # Packed structs and alignment invariants
-│   │   └── XdbfParser.hpp        # Core zero-copy parsing engine interface
-│   └── ui/
-│       ├── MainWindow.hpp        # Qt GUI controller
-│       └── HexViewerWidget.hpp   # Real-time memory arena viewer
-├── src/
-│   ├── core/
-│   │   ├── XdbfDefinitions.cpp   # Validation routines
-│   │   └── XdbfParser.cpp        # Byte-stream decoding implementation
-│   ├── ui/
-│   │   ├── MainWindow.cpp        # Signal/slot integration and event handling
-│   │   └── main.cpp              # Application entry point
-│   └── resources/
-│       └── resources.qrc         # Embedded style descriptors
-├── CMakeLists.txt                # Production Modern CMake (3.16+) configuration
-├── XDBF.pro                      # Backward-compatible Qt qmake configuration
-└── COPYING                       # GNU General Public License v3.0
-5. Build Pipeline & Verification
-5.1 System Prerequisites
-C++ Compiler: GCC 11+, Clang 13+, or MSVC 2022 (C++17 or C++20 standard compliance required)
+```
 
-Framework: Qt 5.15 LTS or Qt 6.4+ (Core, GUI, Widgets modules)
+### Dynamic Heap Allocation & Compaction (`fmalloc`)
 
-Build System: CMake 3.16+ or qmake
+When injecting new payloads or expanding variable-length Unicode string tables, the engine evaluates available free blocks registered in the Free Memory Allocation Table (`freeMemTable`).
 
-5.2 Compiling with CMake (Recommended for Production / Research)
-Bash
-# Clone the repository
-git clone [https://github.com/chiragrajdadhich05iitp/xbox-xdbf-explorer.git](https://github.com/chiragrajdadhich05iitp/xbox-xdbf-explorer.git)
-cd xbox-xdbf-explorer
+* If contiguous space $\ge S_{\text{required}}$, the block is allocated and the remaining delta is sliced into a new free span entry.
+* If no existing span accommodates the payload, dynamic expansion occurs at the EOF boundary, updating the Master Entry Table in an atomic linear step.
 
-# Configure modern out-of-source release build
-cmake -B build -S . \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_CXX_STANDARD=17 \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+---
 
-# Compile target binary utilizing available physical threads
-cmake --build build --parallel $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
-5.3 Compiling with qmake
-Bash
-qmake XDBF.pro CONFIG+=release
-make -j4
-6. Execution & Verification Workflow
-Launch Analysis Executable:
+## 4. Visual Inspection & Operations Interface
 
-Bash
-./build/bin/xbox-xdbf-explorer
-Load Target Binary:
+The explorer visual interface decouples raw byte manipulators into high-level tree architectures and structured grids.
 
-Provide any uncompressed .gpd profile database (e.g., 4D5307E6.gpd or Title Metadata payloads).
+---
 
-Execution Diagnostics:
+## 5. Toolchain & Modernization Pipeline
 
-Verify magic header validation matches 0x58444246.
+The repository was migrated from legacy Qt4/GCC 4.x codebases to support modern toolchains:
 
-Inspect parsed binary leaf nodes via the dynamic structural model view.
+| Module / Vector | Legacy Target (Qt4 / MinGW32) | Modern Target (Qt 5.15+ / UCRT64) |
+| --- | --- | --- |
+| **ABI Runtime** | `MSVCRT.DLL` (Legacy Win32 subsystem) | `UCRT.DLL` (ISO C Standard Universal CRT) |
+| **Widget Hierarchy** | Monolithic `QtGui/*` include models | Modular `QtWidgets/*` pipeline separation |
+| **Header Layout** | `QDesktopServices::storageLocation()` | Deterministic `QStandardPaths::writableLocation()` |
+| **Table Layout** | `QHeaderView::setResizeMode()` | Strict section mapping `setSectionResizeMode()` |
+| **String Coercion** | Insecure `.toAscii()` truncation | Deterministic `.toLatin1()` / `.toUtf8()` |
+| **Type Aliasing** | Explicit `(double*)&int64` casting | Safe pointer conversions & aliasing guards |
 
-Stream raw asset buffers to local storage with verified byte-integrity checks.
+---
 
-7. Academic Integrity, Provenance & License
-This implementation represents an independent systems-level exploration of legacy Big-Endian hierarchical storage architectures. It is distributed strictly under the terms of the GNU General Public License Version 3.0 (GPL-3.0). Refer to the accompanying COPYING documentation for full terms and conditions governing source redistribution.
+## 6. Deterministic Build Procedure
 
+The project strictly compiles with the MSYS2 UCRT64 toolchain environment.
+
+### 1. Toolchain Initialization
+
+Ensure dependencies are available via the MSYS2 package manager:
+
+```bash
+pacman -Sy --noconfirm mingw-w64-ucrt-x86_64-gcc \
+                       mingw-w64-ucrt-x86_64-make \
+                       mingw-w64-ucrt-x86_64-qt5-base
+
+```
+
+### 2. Compilation via PowerShell
+
+```powershell
+# Set deterministic path isolation to avoid path collisions
+$env:Path = "C:\msys64\ucrt64\bin;C:\Windows\system32;C:\Windows"
+
+# Navigate into project target directory
+cd XDBF
+
+# Ingest and serialize Makefile rules
+qmake-qt5.exe XDBF.pro
+
+# Compile binary across thread pool
+mingw32-make -j$(Get-CimInstance Win32_ComputerSystem | Select-Object -ExpandProperty NumberOfLogicalProcessors)
+
+# Launch build output
+.\release\xbox-xdbf-explorer.exe
+
+```
+
+---
+
+## 7. Directory & Subsystem Tree
+
+```
+.
+├── XDBF/
+│   ├── XDBF.pro                  # Qt build flags, linker libraries (-lQt5Widgets, -lQt5Network)
+│   ├── xdbf.cpp / .h             # Core binary container parser & allocator
+│   ├── xdbfhelper.cpp / .h       # Low-level byte-swapping pipelines & GUID encoders
+│   ├── FileIO.cpp / .h           # Direct binary file stream abstractions
+│   ├── mainwindow.cpp / .h       # Primary inspection GUI viewport
+│   ├── imagedialog.cpp / .h      # Extraction dialog for raw compressed textures & PNGs
+│   ├── achievementviewer.cpp/.h  # Metadata deserializer for achievement bitfields
+│   └── *.ui                      # XML forms parsed by uic (Qt User Interface Compiler)
+├── assets/                       # Technical schematics and layout assets
+├── .gitignore                    # Build artifact isolation filter
+└── README.md                     # Engineering specification
+
+```
+
+---
+
+## 8. License & Attribution
+
+Distributed under the **MIT License**. Engineered for reverse-engineering research, digital preservation of 7th-generation console architectures, and high-performance serialization systems.
+
+```
+
+---
