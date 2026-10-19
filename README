@@ -1,5 +1,27 @@
 # Xbox 360 XDBF Metadata Engine & Binary Serialization Pipeline
 
+<div align="center">
+
+![C++ Standard](https://img.shields.io/badge/ISO_C%2B%2B-17-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white)
+![UI Framework](https://img.shields.io/badge/GUI-Qt_5.15%2B_QtWidgets-41CD52?style=for-the-badge&logo=qt&logoColor=white)
+![Toolchain](https://img.shields.io/badge/Toolchain-MSYS2_UCRT64-2F3238?style=for-the-badge)
+![License](https://img.shields.io/badge/License-GPL_v3.0-blue?style=for-the-badge)
+
+<br/>
+
+<img src="assets/demo-banner.jpg" alt="Xbox XDBF Explorer Architecture" width="850" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);" />
+
+<p><em>Systems-level binary parsing engine, memory-safe in-place serialization, and interactive Qt5 inspection suite for Xbox 360 XDBF / GPD containers.</em></p>
+
+</div>
+
+---
+
+## 1. Abstract & System Architecture
+
+The Xbox 360 operating system runtime persists identity profiles, cryptographic achievement records, stateful game parameters, and localized Unicode catalogs inside **Game Profile Data (`.gpd`) packages**. At the core of each package lies an **`XDBF` (Xbox Database File)** compound container.
+# Xbox 360 XDBF Metadata Engine & Binary Serialization Pipeline
+
 <p align="center">
   <img src="https://img.shields.io/badge/Standard-ISO%20C%2B%2B17-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white" />
   <img src="https://img.shields.io/badge/GUI-Qt%205.15%2B%20QtWidgets-41CD52?style=for-the-badge&logo=qt&logoColor=white" />
