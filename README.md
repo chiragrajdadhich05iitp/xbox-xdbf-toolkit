@@ -9,7 +9,7 @@
 
 <br/>
 
-<img src="assets/demo-banner.jpg" alt="Xbox XDBF Explorer Architecture" width="850" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);" />
+<img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80" alt="Xbox XDBF Explorer Architecture" width="850" style="border-radius: 8px; border: 1px solid #30363d;" />
 
 <p><em>Systems-level binary parsing engine, memory-safe in-place serialization, and interactive Qt5 inspection suite for Xbox 360 XDBF / GPD containers.</em></p>
 
