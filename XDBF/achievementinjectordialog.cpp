@@ -4,6 +4,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QDesktopServices>
+#include <QStandardPaths>
 #include <QBuffer>
 #include "mainwindow.h"
 
@@ -142,7 +143,7 @@ void AchievementInjectorDialog::on_imageChbx_stateChanged(int arg1)
 
 void AchievementInjectorDialog::on_openImageBtn_clicked()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QDesktopServices::storageLocation(QDesktopServices::DesktopLocation), "*.png");
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), "*.png");
     image.load(fileName);
 
     // make sure the user selected a file

@@ -3,10 +3,10 @@
 
 #include <QDialog>
 #include "xdbf.h"
-#include <QtGui/QSpinBox>
-#include <QtGui/QDoubleSpinBox>
-#include <QtGui/QLineEdit>
-#include <QtGui/QDateTimeEdit>
+#include <QtWidgets/QSpinBox>
+#include <QtWidgets/QDoubleSpinBox>
+#include <QtWidgets/QLineEdit>
+#include <QtWidgets/QDateTimeEdit>
 
 namespace Ui {
 class SettingInjectorInt;

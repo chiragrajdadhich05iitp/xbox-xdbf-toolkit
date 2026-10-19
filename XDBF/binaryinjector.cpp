@@ -3,6 +3,7 @@
 
 #include <QFileDialog>
 #include <QDesktopServices>
+#include <QStandardPaths>
 #include <QFile>
 #include <QMessageBox>
 #include "mainwindow.h"
@@ -114,7 +115,7 @@ bool BinaryInjector::isAllNumbers(QString s)
 
 void BinaryInjector::on_pushButton_3_clicked()
 {
-    QString path1 = QFileDialog::getOpenFileName(this, "Select File", QDesktopServices::storageLocation(QDesktopServices::DesktopLocation));
+    QString path1 = QFileDialog::getOpenFileName(this, "Select File", QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
     if(path1 == "")
         return;
 

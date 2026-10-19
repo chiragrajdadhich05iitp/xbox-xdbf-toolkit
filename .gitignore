@@ -44,3 +44,32 @@ XDBFRelease/
 ###############
 *.orig
 *.autosave
+
+# Qt / C++ build output
+Makefile*
+*.o
+*.obj
+*.moc
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+debug/
+release/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE specific
+.vscode/
+.idea/
+*.user
+*.pro.user*release/
+debug/
+*.o
+Makefile*
+ui_*.h
+object_script.*
+.qmake.stash
+*.exe

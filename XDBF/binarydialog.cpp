@@ -3,6 +3,7 @@
 
 #include <QFileDialog>
 #include <QDesktopServices>
+#include <QStandardPaths>
 #include <QMessageBox>
 
 BinaryDialog::BinaryDialog(QWidget *parent, Setting_Entry *entry) : QDialog(parent), ui(new Ui::BinaryDialog)
@@ -12,8 +13,8 @@ BinaryDialog::BinaryDialog(QWidget *parent, Setting_Entry *entry) : QDialog(pare
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     ui->setupUi(this);
 
-    ui->tableWidget->verticalHeader()->setResizeMode(QHeaderView::Fixed);
-    ui->tableWidget->horizontalHeader()->setResizeMode(QHeaderView::Fixed);
+    ui->tableWidget->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Fixed);
 
     QStringList columnHeaders;
     for(int i = 0; i < 0x10; i++)
@@ -60,13 +61,13 @@ BinaryDialog::~BinaryDialog()
 
 void BinaryDialog::on_pushButton_clicked()
 {
-    QString desktopLocation = QDesktopServices::storageLocation(QDesktopServices::DesktopLocation);
+    QString desktopLocation = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
     QString saveLoc = QFileDialog::getSaveFileName(this, "Select a Save Path", desktopLocation);
 
     if(saveLoc == "")
         return;
 
-    QByteArray ba = saveLoc.toAscii();
+    QByteArray ba = saveLoc.toLatin1();
     char *path_c = ba.data();
 
     FILE *f;

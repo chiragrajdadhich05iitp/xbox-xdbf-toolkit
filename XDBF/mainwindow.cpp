@@ -1,3 +1,9 @@
+/**
+ * @file mainwindow.cpp
+ * @brief Xbox 360 XDBF Explorer - Main Application Window & Controller
+ * Distributed under the terms of the GNU General Public License v3.0.
+ */
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <time.h>
@@ -10,15 +16,26 @@
 #include "about.h"
 
 #include <QLabel>
+#include <QMenu>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QDesktopServices>
+#include <QStandardPaths>
+#include <QFileInfo>
 
 Q_DECLARE_METATYPE(Entry*)
 
 MainWindow::MainWindow(QWidget *parent, string filePath) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
-    desktop_location = QDesktopServices::storageLocation(QDesktopServices::DesktopLocation);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    desktop_location = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+#else
+    desktop_location = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+#endif
     ObjectRole = Qt::UserRole;
 
     ui->setupUi(this);
+    setWindowTitle("Xbox XDBF Explorer");
 
     friendlyNames[0] = "Achievement";
     friendlyNames[1] = "Image";
@@ -66,7 +83,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-// from: http://stackoverflow.com/questions/5298614/change-the-size-of-qt-dialogs-depending-on-the-platform
 void MainWindow::adjustAppearanceToOS(QWidget *rootWidget)
 {
     int fontSize = -1;
@@ -81,31 +97,23 @@ void MainWindow::adjustAppearanceToOS(QWidget *rootWidget)
     if (rootWidget == NULL)
         return;
 
-    QObject *child = NULL;
     QObjectList Containers;
-    QObject *container  = NULL;
-    QStringList DoNotAffect;
-
-    // Make an exception list (Objects not to be affected)
-    // DoNotAffect.append("widgetName");
-
-    // Append root to containers
     Containers.append(rootWidget);
 
     while (!Containers.isEmpty())
     {
-        container = Containers.takeFirst();
+        QObject *container = Containers.takeFirst();
         if (container != NULL)
+        {
             for (int i = 0; i < container->children().size(); i++)
             {
-                child = container->children()[i];
-                if (!child->isWidgetType() || DoNotAffect.contains(child->objectName()))
+                QObject *child = container->children()[i];
+                if (!child->isWidgetType())
                     continue;
 
                 if (child->children().size() > 0)
                     Containers.append(child);
 
-                // (if the object is not of the correct type, it will be NULL)
                 QLabel *label = qobject_cast<QLabel *>(child);
                 if (label != NULL)
                 {
@@ -116,24 +124,24 @@ void MainWindow::adjustAppearanceToOS(QWidget *rootWidget)
                     label->setFont(font);
                 }
             }
+        }
     }
 }
-//
 
 void MainWindow::on_actionOpen_triggered()
 {
     QString file_name = QFileDialog::getOpenFileName(this, tr("Open File"), desktop_location, "*.gpd");
 
-    if(file_name == NULL)
+    if (file_name.isEmpty())
         return;
 
-    if(xdbf != NULL)
+    if (xdbf != NULL)
     {
         xdbf->close();
         xdbf = NULL;
     }
 
-    QByteArray ba = file_name.toAscii();
+    QByteArray ba = file_name.toUtf8();
     name = ba.data();
 
     try
@@ -152,8 +160,6 @@ void MainWindow::on_actionOpen_triggered()
     ui->actionClean_GPD->setEnabled(true);
     ui->actionAddress_Converter->setEnabled(true);
     ui->actionClose->setEnabled(true);
-
-    return;
 }
 
 void MainWindow::clear_items()
@@ -166,7 +172,7 @@ void MainWindow::clear_items()
 
 void MainWindow::on_actionClose_triggered()
 {
-    if(xdbf == NULL)
+    if (xdbf == NULL)
         return;
 
     ui->actionAdd_New_Entry->setEnabled(false);
@@ -179,7 +185,7 @@ void MainWindow::on_actionClose_triggered()
     xdbf = NULL;
     clear_items();
 
-    setWindowTitle("XDBF Manage");
+    setWindowTitle("Xbox XDBF Explorer");
 }
 
 void MainWindow::loadEntries()
@@ -193,12 +199,10 @@ void MainWindow::loadEntries()
             return;
         Header *header = xdbf->getHeader();
 
-        clear_items();
-
-        for(unsigned int i = 0; i < header->entryCount; i++)
+        for (unsigned int i = 0; i < header->entryCount; i++)
         {
-            QString name = QString::fromStdString(EntryIDToString(entries[i].identifier));
-            QTableWidgetItem *item = new QTableWidgetItem((name == "") ? "0x" + QString::number(entries[i].identifier, 16).toUpper() : name);
+            QString entryName = QString::fromStdString(EntryIDToString(entries[i].identifier));
+            QTableWidgetItem *item = new QTableWidgetItem((entryName == "") ? "0x" + QString::number(entries[i].identifier, 16).toUpper() : entryName);
             item->setData(ObjectRole, QVariant::fromValue(&entries[i]));
 
             ui->tableWidget->insertRow(i);
@@ -207,7 +211,7 @@ void MainWindow::loadEntries()
             ui->tableWidget->setItem(i, 2, new QTableWidgetItem("0x" + QString::number(entries[i].address, 16).toUpper()));
 
             QString setting_entry_name = "";
-            if(entries[i].type == ET_SETTING && entries[i].identifier != SYNC_LIST && entries[i].identifier != SYNC_DATA)
+            if (entries[i].type == ET_SETTING && entries[i].identifier != SYNC_LIST && entries[i].identifier != SYNC_DATA)
             {
                 Setting_Entry *entry = xdbf->getSettingEntry(&entries[i]);
                 setting_entry_name = " - " + QString::fromStdString(xdbf->getSettingEntryName(entry));
@@ -215,13 +219,13 @@ void MainWindow::loadEntries()
             else if (entries[i].identifier == 0x8000 && entries[i].type == ET_STRING)
             {
                 std::wstring titleName = xdbf->getStringEntry(&entries[i]);
-                setWindowTitle("XDBF Manager - " + QString::fromWCharArray(titleName.c_str()));
+                setWindowTitle("Xbox XDBF Explorer - " + QString::fromWCharArray(titleName.c_str()));
             }
             ui->tableWidget->setItem(i, 3, new QTableWidgetItem(friendlyNames[entries[i].type - 1] + setting_entry_name));
         }
         ui->tableWidget->setSortingEnabled(true);
     }
-    catch(char *exception)
+    catch (char *exception)
     {
         QMessageBox::warning(this, "Error", exception, QMessageBox::Ok);
     }
@@ -229,12 +233,16 @@ void MainWindow::loadEntries()
 
 void MainWindow::on_tableWidget_doubleClicked(const QModelIndex &index)
 {
+    Q_UNUSED(index);
+    if (ui->tableWidget->selectedItems().isEmpty())
+        return;
+
     QTableWidgetItem* item = ui->tableWidget->selectedItems()[0];
     Entry *e = item->data(ObjectRole).value<Entry*>();
 
-    if(e->identifier == SYNC_LIST || e->identifier == SYNC_DATA || ((e->identifier == 1 || e->identifier == 2) && e->type == ET_AVATAR_AWARD))
+    if (e->identifier == SYNC_LIST || e->identifier == SYNC_DATA || ((e->identifier == 1 || e->identifier == 2) && e->type == ET_AVATAR_AWARD))
     {
-        if(e->identifier == SYNC_LIST || e->identifier == 1)
+        if (e->identifier == SYNC_LIST || e->identifier == 1)
         {
             Sync_List sl = xdbf->getSyncList(e->type, e->identifier);
             SyncListDialog dialog(this, &sl, xdbf);
@@ -289,7 +297,6 @@ void MainWindow::on_tableWidget_doubleClicked(const QModelIndex &index)
         if (tent == NULL)
             return;
         TitleInjectorDialog dialog(this, xdbf, tent);
-
         dialog.exec();
     }
     else if (e->type == ET_ACHIEVEMENT)
@@ -299,7 +306,7 @@ void MainWindow::on_tableWidget_doubleClicked(const QModelIndex &index)
         Entry *imageEntry = NULL;
 
         for (int i = 0; i < xdbf->getHeader()->entryCount; i++)
-            if(entries[i].type == ET_IMAGE && entries[i].identifier == chiev->imageID )
+            if (entries[i].type == ET_IMAGE && entries[i].identifier == chiev->imageID)
                 imageEntry = &entries[i];
 
         AchievementViewer *dialog;
@@ -350,10 +357,10 @@ void MainWindow::extractFiles(QList<QTableWidgetItem*> items)
 {
     QString dir = QFileDialog::getExistingDirectory(this, tr("Select a Directory"), desktop_location) + "\\";
 
-    if(dir == "\\")
+    if (dir == "\\")
         return;
 
-    for(int i = 0; i < items.size() / 4; i++)
+    for (int i = 0; i < items.size() / 4; i++)
     {
         QTableWidgetItem* item = items[i];
         Entry *e = item->data(ObjectRole).value<Entry*>();
@@ -362,16 +369,16 @@ void MainWindow::extractFiles(QList<QTableWidgetItem*> items)
 
         QString path = dir + "0x" + QString::number(e->identifier, 16).toUpper() + " - " + friendlyNames[e->type - 1];
 
-        if(QFileInfo(path).exists())
+        if (QFileInfo(path).exists())
         {
             int adder = 2;
-            while(QFileInfo(path + "(" + QString::number(adder) + ")").exists())
+            while (QFileInfo(path + "(" + QString::number(adder) + ")").exists())
                 adder++;
 
             path += "(" + QString::number(adder) + ")";
         }
 
-        QByteArray ba = path.toAscii();
+        QByteArray ba = path.toUtf8();
         char *path_c = ba.data();
         f = fopen(path_c, "wb");
 
@@ -381,7 +388,7 @@ void MainWindow::extractFiles(QList<QTableWidgetItem*> items)
             fwrite(data, e->length, sizeof(char), f);
             fclose(f);
         }
-        catch(char *exce)
+        catch (char *exce)
         {
             QMessageBox::information(this, "Error Occurred", exce, QMessageBox::Ok);
         }
@@ -406,19 +413,16 @@ void MainWindow::showRemoveContextMenu(const QPoint &pos)
     contextMenu.addAction(icon2, "Remove Selected");
 
     QAction *selectedItem = contextMenu.exec(globalPos);
-    if(selectedItem == NULL)
+    if (selectedItem == NULL)
         return;
 
     try
     {
-        if(selectedItem->text() == "Remove Selected")
+        if (selectedItem->text() == "Remove Selected")
         {
             QList<QTableWidgetItem*> items = ui->tableWidget->selectedItems();
 
-            for(int i = 0; i < items.count(); i++)
-                qDebug("%d: %s", i, items.at(i)->text().toStdString().c_str());
-
-            for(int i = 0; i < items.count(); i += 4)
+            for (int i = 0; i < items.count(); i += 4)
             {
                 bool hexOnly = hexNumbersOnly(items.at(i)->text().remove("0x"));
                 unsigned long long id = hexOnly ? items.at(i)->text().toULongLong(0, 16) : getIdFromName(items.at(i)->text().toStdString());
@@ -427,15 +431,15 @@ void MainWindow::showRemoveContextMenu(const QPoint &pos)
                 xdbf->removeEntry(e);
             }
 
-            for(int i = 0; i < items.count(); i += 4)
+            for (int i = 0; i < items.count(); i += 4)
                 ui->tableWidget->removeRow(items[i]->row());
         }
-        else if(selectedItem->text() == "Extract Selected")
+        else if (selectedItem->text() == "Extract Selected")
         {
             extractFiles(ui->tableWidget->selectedItems());
         }
     }
-    catch(char *str)
+    catch (char *str)
     {
         QMessageBox::warning(this, "Error Thrown", QString::fromLocal8Bit(str));
     }
@@ -444,7 +448,7 @@ void MainWindow::showRemoveContextMenu(const QPoint &pos)
 bool MainWindow::hexNumbersOnly(QString s)
 {
     for (int i = 0; i < s.length(); i++)
-        if (isxdigit(s.at(i).toAscii()) == 0)
+        if (isxdigit(s.at(i).toLatin1()) == 0)
             return false;
     return true;
 }

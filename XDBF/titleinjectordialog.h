@@ -3,7 +3,7 @@
 
 #include <QDialog>
 #include "xdbf.h"
-#include <QtGui/QLineEdit>
+#include <QtWidgets/QLineEdit>
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkRequest>
 #include <QtNetwork/QNetworkReply>

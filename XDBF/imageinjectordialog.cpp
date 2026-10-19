@@ -3,6 +3,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QDesktopServices>
+#include <QStandardPaths>
 #include <QBuffer>
 #include "mainwindow.h"
 
@@ -37,7 +38,7 @@ void ImageInjectorDialog::on_pushButton_clicked()
 
 void ImageInjectorDialog::on_pushButton_2_clicked()
 {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Open PNG Image"), QDesktopServices::storageLocation(QDesktopServices::DesktopLocation), "*.png");
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Open PNG Image"), QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), "*.png");
 
     FileIO file(filePath.toStdString());
 

@@ -51,7 +51,7 @@ AchievementViewer::~AchievementViewer()
 
 void AchievementViewer::on_pushButton_clicked()
 {
-    QString save_path = QFileDialog::getSaveFileName(this, "", QDesktopServices::storageLocation(QDesktopServices::DesktopLocation), "PNG Image (*.png)");
+    QString save_path = QFileDialog::getSaveFileName(this, "", QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), "PNG Image (*.png)");
     if(save_path == "")
         return;
 

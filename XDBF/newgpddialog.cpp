@@ -2,6 +2,7 @@
 #include "ui_newgpddialog.h"
 #include "xdbf.h"
 #include <QDesktopServices>
+#include <QStandardPaths>
 #include <QBuffer>
 #include <QFileDialog>
 #include "achievementgpd.h"
@@ -36,7 +37,7 @@ void NewGpdDialog::on_pushButton_clicked()
         // dashboard gpd
         case 1:
         {
-            QString filePath = QFileDialog::getSaveFileName(this, tr("Where should the new GPD be created?"), QDesktopServices::storageLocation(QDesktopServices::DesktopLocation), "*.gpd");
+            QString filePath = QFileDialog::getSaveFileName(this, tr("Where should the new GPD be created?"), QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), "*.gpd");
             if (filePath == "")
                 return;
 
@@ -56,7 +57,7 @@ void NewGpdDialog::on_pushButton_clicked()
         // avatar award gpd
         case 2:
         {
-            QString filePath = QFileDialog::getSaveFileName(this, tr("Where should the new GPD be created?"), QDesktopServices::storageLocation(QDesktopServices::DesktopLocation), "*.gpd");
+            QString filePath = QFileDialog::getSaveFileName(this, tr("Where should the new GPD be created?"), QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), "*.gpd");
             if (filePath == "")
                 return;
 

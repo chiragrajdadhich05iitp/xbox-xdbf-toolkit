@@ -95,6 +95,6 @@ private:
 };
 
 bool compareFunction(Entry e1, Entry e2);
-XDBF* XDBFcreate(string filePath, GPD_Type type, char *imageData, size_t imageDataLen, wstring *gameName);
+XDBF* XDBFcreate(string filePath, GPD_Type type, char *imageData = NULL, size_t imageDataLen = 0, wstring *gameName = NULL);
 
 #endif // XDBF_H

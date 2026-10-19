@@ -21,7 +21,7 @@ ImageDialog::~ImageDialog()
 
 void ImageDialog::on_pushButton_clicked()
 {
-    QString save_path = QFileDialog::getSaveFileName(this, QString(), QDesktopServices::storageLocation(QDesktopServices::DesktopLocation), "PNG Image (*.png)");
+    QString save_path = QFileDialog::getSaveFileName(this, QString(), QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), "PNG Image (*.png)");
     if(save_path == "")
         return;
 

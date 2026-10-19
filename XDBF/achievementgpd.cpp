@@ -2,6 +2,7 @@
 #include "ui_achievementgpd.h"
 #include <QFileDialog>
 #include <QDesktopServices>
+#include <QStandardPaths>
 #include <QMessageBox>
 #include <QBuffer>
 #include "mainwindow.h"
@@ -27,7 +28,7 @@ void AchievementGPD::on_pushButton_2_clicked()
 
 void AchievementGPD::on_pushButton_clicked()
 {
-    QString filePath = QFileDialog::getOpenFileName(this, tr("Open PNG Image"), QDesktopServices::storageLocation(QDesktopServices::DesktopLocation), "*.png");
+    QString filePath = QFileDialog::getOpenFileName(this, tr("Open PNG Image"), QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), "*.png");
 
     FileIO file(filePath.toStdString());
 
@@ -69,7 +70,7 @@ void AchievementGPD::on_pushButton_3_clicked()
         return;
     }
 
-    QString filePath = QFileDialog::getSaveFileName(this, tr("Where should the new GPD be created?"), QDesktopServices::storageLocation(QDesktopServices::DesktopLocation), "*.gpd");
+    QString filePath = QFileDialog::getSaveFileName(this, tr("Where should the new GPD be created?"), QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), "*.gpd");
     if (filePath == "")
         return;
 

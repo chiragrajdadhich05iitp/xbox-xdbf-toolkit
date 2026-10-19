@@ -204,7 +204,7 @@ void TitleInjectorDialog::on_pushButton_2_clicked()
 bool TitleInjectorDialog::hexNumbersOnly(QLineEdit *lineEdit)
 {
     for (int i = 0; i < lineEdit->text().length(); i++)
-        if (isxdigit(lineEdit->text().at(i).toAscii()) == 0)
+        if (isxdigit(lineEdit->text().at(i).toLatin1()) == 0)
             return false;
     return true;
 }
